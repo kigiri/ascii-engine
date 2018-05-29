@@ -1,365 +1,161 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>webgl-test</title>
-</head>
+  <meta charset="utf-8">
+  <title>layout</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/codemirror.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/theme/dracula.css">
 <style type="text/css">
-html, body, canvas {
-  margin:0;
-  padding:0;
-  width: 1024;
-  height: 1024;
-  overflow: hidden;
-  background-size: 1024px;
-  background-repeat: no-repeat;
+html, body {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  background-color: hsla(231, 15%, 18%, 1);
+  color: #f8f8f2;
+  font-family: monospace;
 }
 
-canvas {
+body {
+  display: flex;
+  flex-direction: column;
 }
+
+#tutorial {
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  flex-grow: 1;
+}
+
+#display {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: 40%;
+  flex-shrink: 0;
+  background-color: hsla(231, 15%, 15%, 1);
+}
+
+.CodeMirror {
+  flex-grow: 1;
+  height: 100%;
+}
+
+code.tip {
+  font-size: 72px;
+  padding: 15px;
+  background: hsl(235, 14%, 15%);
+  border-radius: 30px;
+}
+
+@media screen and (orientation: landscape) {
+  body {
+    flex-direction: row;
+  }
+
+  #display {
+    width: 50%;
+    height: 100%;
+    flex-shrink: 0;
+  }
+}
+
+body .tip { display: none }
+body.macos .tip.macos { display: initial }
+body.anyos .tip.anyos { display: initial }
+
+.comment { color: #6272a4 }
+.yellow { color: #f1fa8c }
+.purple { color: #bd93f9 }
+.orange { color: #ffb86c }
+.green { color: #50fa7b }
+.white { color: #f8f8f2 }
+.pink { color: #ff79c6 }
+.cyan { color: #66d9ef }
 
 </style>
+</head>
 <body>
-<canvas width="1024" height="1024"></canvas>
+<div id="display"></div>
+<div id="tutorial">
+  <code class="tip macos">⌘⌥j</code>
+  <code class="tip anyos">⌃⇧j</code>
+</div>
 <script type="module">
-const vertexShaderSource = `#version 300 es
+  if (/^Mac/.test(navigator.platform)) {
+  document.body.classList.add('macos')
+} else {
+  document.body.classList.add('anyos')
+}
+import { init } from './engine.js'
 
-in vec2 a_position;
-in vec2 a_texCoord;
-uniform vec2 u_resolution;
-out vec2 v_texCoord;
+const displayEl = document.getElementById('display')
+const engine = init({
+  into: displayEl,
+  charCount: 40,
+  width: 710,
+  height: 710,
+})
 
-void main() {
-  gl_Position = vec4((a_position / u_resolution * 2.0 - 1.0) * vec2(1, -1), 0, 1);
-  v_texCoord = a_texCoord;
-}`
-
-const fragmentShaderSource = `#version 300 es
-precision mediump float;
-
-uniform sampler2D u_image;
-uniform vec4 u_color;
-in vec2 v_texCoord;
-out vec4 outColor;
-
-void main() {
-  outColor = texture(u_image, v_texCoord) + u_color;
-}`
-
-const createShader = type => (gl, source) => {
-  const shader = gl.createShader(gl[type])
-  gl.shaderSource(shader, source)
-  gl.compileShader(shader)
-  const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS)
-  if (success) return shader
-
-  console.warn(`failed to create ${type}`, gl.getShaderInfoLog(shader))
-  gl.deleteShader(shader)
+const resize = () => {
+  const rect = displayEl.getBoundingClientRect()
+  engine.canvas.style.maxHeight = `${rect.height}px`
+  engine.canvas.style.maxWidth = `${rect.width}px`
 }
 
-createShader.vertex = createShader('VERTEX_SHADER')
-createShader.fragment = createShader('FRAGMENT_SHADER')
+resize()
+//engine.canvas.style.backgroundColor = '#90659a'
 
-const getFontRatio = fontFamily => {
-  const div = document.createElement('span')
-  div.style.fontFamily = fontFamily
-  div.style.fontSize = `1024px`
-  div.style.fontWeight = 900
-  div.style.fontStyle = 'italic'
-  div.textContent = 'M'
-  document.documentElement.appendChild(div)
-  const { width, height } = div.getBoundingClientRect()
-  div.remove()
-  return { width: width / 1024, height: height / 1024 }
-}
 
-const getTexture = ({ fontFamily, chars, charCount, ...expected }) => {
-  const range = chars.length
-  const sqrt = Math.sqrt(range)
-  const ratio = getFontRatio(fontFamily)
-  const fontWidth = ratio.width * 1.5
-  let len = 1
-  while (len * (len * fontWidth) < range * 4 * ratio.height) len++
-//  len++
+engine.color(1, 0.7, 0.7, 1)
+engine.color.hex('#f1fa8c')
+engine.text(`
+Hejj
+wassup ??
+wassup???  d dsd d
+`)
+engine.color.hex('#50fa7b')
+engine.char('O', 0, 0)
+// engine.clear.line(2)
+// engine.clear.area(2, 2, 3, 3) // x, y, w, h
+engine.char('/', 0, 0)
 
-  const fontSize = expected.width / ratio.width / charCount
-  const resolution = 2 ** Math.ceil(Math.log(fontSize * len) / Math.log(2))
+// setInterval(() => engine.char('H', 0, 1), 20)
 
-  const lines = Math.ceil((range * 4) / len)
+console.log(engine)
 
-  // write them in canvas
-  const canvas = document.createElement('canvas')
-  canvas.height = canvas.width = resolution
-  const ctx = canvas.getContext('2d')
-  const width = resolution / len
-  const height = resolution / lines
-
-  const wPad = (width - ratio.width * fontSize) / 2
-  const hPad = lines * ratio.height * fontSize
-  ctx.textBaseline = 'top'
-  const fonts = [
-    `300 ${fontSize}px ${fontFamily}`,
-    `900 ${fontSize}px ${fontFamily}`,
-    `italic 300 ${fontSize}px ${fontFamily}`,
-    `italic 900 ${fontSize}px ${fontFamily}`,
-  ]
-
-  const glyphs = Object.create(null)
-  Array(4).fill().map((_, i) => glyphs[i] = Object.create(null))
-  chars.repeat(4).split('').forEach((l, i) => {
-    const typeIndex = Math.floor(i / range)
-    ctx.font = fonts[typeIndex]
-
-    const x = i % len
-    const y = Math.floor(i / len)
-
-    glyphs[typeIndex][l] = new Float32Array([
-      x * width,         y * height,
-      x * width + width, y * height,
-      x * width,         y * height + height,
-      x * width,         y * height + height,
-      x * width + width, y * height,
-      x * width + width, y * height + height,
-    ].map(n => n / (resolution)))
-
-    ctx.fillText(l, wPad + x * width, (y * height))
+window.start = () => {
+  const editor = CodeMirror(document.body, {
+    lineNumbers: true,
+    matchBrackets: true,
+    autoCloseBrackets: true,
+    theme: 'dracula',
+    mode: 'javascript',
+    viewportMargin: Infinity,
+    keyMap: 'sublime',
+    tabSize: 2
   })
-
-  return {
-    canvas, width, height, ratio, range, resolution, fontSize, glyphs,
-    letterSpacing: fontSize * ratio.width - width,
-    lineHeight: fontSize * ratio.height - height,
-    length: len,
-  }
 }
-
-const initProgram = gl => {
-  const vertexShader = createShader.vertex(gl, vertexShaderSource)
-  const fragmentShader = createShader.fragment(gl, fragmentShaderSource)
-  const program = gl.createProgram()
-  gl.attachShader(program, vertexShader)
-  gl.attachShader(program, fragmentShader)
-  gl.linkProgram(program)
-  if (gl.getProgramParameter(program, gl.LINK_STATUS)) return program
-
-  console.warn(`failed to link shaders`, gl.getProgramInfoLog(program))
-  gl.deleteProgram(program)
-}
-
-const ASCII = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`'
-  +'abcdefghijklmnopqrstuvwxyz{|}~'
-const init = ({
-  fontWeightBold = 900,
-  fontFamily = 'monospace',
-  canvas = document.getElementsByTagName('canvas')[0],
-  width = canvas.width,
-  height = canvas.height,
-  charCount = 80,
-  chars = ASCII,
-  letterSpacing = 0,
-  lineHeight = 0,
-} = {}) => {
-  let font, fontSpaceWidth, fontSpaceHeight, fontHeight, fontWidth, px,
-    fontLeftClip, fontTopClip
-  const resize = () => {
-    if (px === devicePixelRatio) return
-    px = devicePixelRatio
-    canvas.width = width * px
-    canvas.height = height * px
-    canvas.style.width = `${width}px`
-    canvas.style.height = `${width}px`
-    font = getTexture({ fontFamily, chars, charCount, width: width * px })
-    fontSpaceWidth = font.width + font.letterSpacing + letterSpacing
-    fontSpaceHeight = font.height + font.lineHeight + lineHeight
-    fontHeight = font.height
-    fontWidth = font.width
-    fontLeftClip = (fontWidth - fontSpaceWidth) / 2
-    fontTopClip = (fontHeight - fontSpaceHeight) / 2
-  }
-
-  resize()
-  // addEventListener('resize', resize)
-
-
-  // props :
-  // verticalAlign ('top' | 'bottom')
-  // align ('left' | 'right')
-
-  const makeVerticesForString = (s, type = 0) => {
-    const positions = new Float32Array(s.length * 12)
-    const texCoords = new Float32Array(s.length * 12)
-    let i = -1
-    let offset = 0
-    let positionInLine = 0
-    let lineBreaks = 0
-    while (++i < s.length) {
-      const letter = s[i]
-      if (letter === '\n') {
-        positionInLine = 0
-        lineBreaks++
-        continue
-      }
-
-      if (positionInLine > charCount) {
-        lineBreaks++
-        positionInLine = 0
-      }
-
-      const glyph = font.glyphs[type][s[i]]
-      if (!glyph) {
-        positionInLine++
-        continue
-      }
-
-      const x = positionInLine * fontSpaceWidth - fontLeftClip
-      const y = lineBreaks * fontSpaceHeight - fontTopClip
-
-      texCoords.set(glyph, offset)
-      positions[offset] =
-      positions[offset + 4] =
-      positions[offset + 6] = x
-      positions[offset + 1] =
-      positions[offset + 3] =
-      positions[offset + 9] = y
-      positions[offset + 7] =
-      positions[offset + 5] =
-      positions[offset +11] = y + fontHeight
-      positions[offset + 2] =
-      positions[offset + 8] =
-      positions[offset +10] = x + fontWidth
-
-      positionInLine++
-      offset += 12
-    }
-
-    return [ texCoords, positions ]
-  }
-
-  const gl = canvas.getContext('webgl2')
-  const program = initProgram(gl)
-  const a_position = gl.getAttribLocation(program, 'a_position')
-  const a_color = gl.getAttribLocation(program, 'a_color')
-  const texCoordAttributeLocation = gl.getAttribLocation(program, 'a_texCoord')
-  const u_resolution = gl.getUniformLocation(program, 'u_resolution')
-  const u_color = gl.getUniformLocation(program, 'u_color')
-  const u_image = gl.getUniformLocation(program, 'u_image')
-  const vao = gl.createVertexArray()
-  const positionBuffer = gl.createBuffer()
-  const colorBuffer = gl.createBuffer()
-  const texture = gl.createTexture()
-  const texCoordBuffer = gl.createBuffer()
-
-  gl.bindVertexArray(vao)
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-  gl.enableVertexAttribArray(a_position)
-  gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0)
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
-  gl.enableVertexAttribArray(texCoordAttributeLocation)
-  gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0)
-
-  gl.activeTexture(gl.TEXTURE0 + 0)
-  gl.bindTexture(gl.TEXTURE_2D, texture)
-  // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-  // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, font.canvas)
-  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-  gl.enable(gl.BLEND)
-  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-
-  gl.useProgram(program)
-  gl.bindVertexArray(vao)
-  gl.uniform2f(u_resolution, gl.canvas.width, gl.canvas.height)
-  gl.uniform1i(u_image, 0)
-
-  gl.clearColor(0, 0, 0, 0)
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-
-  let kolo = 0
-  const render = () => {
-    const [ t, p ] = makeVerticesForString(box({
-      text: 'Salut\nCa va ou quoi ???\nWesh !!\nB1 ou ??!! je comprend pas',
-      size: 80 }) +'\n'
-    + box({
-      text: 'Salut\nCa va ou quoi ???',
-      size: 80 }), 1)
-    gl.uniform4f(u_color, 1, 0, Math.random(), 0)
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, t, gl.STATIC_DRAW)
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, p, gl.STATIC_DRAW)
-
-    gl.drawArrays(gl.TRIANGLES, 0, t.length / 2)
-    requestAnimationFrame(render)
-  }
-
-  render()
-  window.gl = gl
-  document.body.style.backgroundImage = `url(${font.canvas.toDataURL()})`
-}
-
-// display.italic.bold.red('hey') // input colored text
-// display.
-
-const boxMaker = example => {
-  const [
-    [ TL, H, TR ],
-    [ V ],
-    [ BL, , BR ]
-  ] = example.split('\n')
-  return (text, size) => {
-    const horizontalLine = H.repeat(size - 2)
-    let result = `${TL}${horizontalLine}${TR}`
-    for (const line of text.split('\n')) {
-      result = `${result}\n${V}${line.slice(0, size - 2).padEnd(size - 2)}${V}`
-    }
-    return `${result}\n${BL}${horizontalLine}${BR}`
-  }
-}
-
-const sqrBx = boxMaker(`
-┌─┐
-│o│
-└─┘`.trim())
-
-const getLonguestLine = text => {
-  let max = 0
-  for (const line of text.split('\n')) {
-    max = Math.max(max, line.length)
-  }
-  return max
-}
-
-const aligner = {
-  left: _ => _,
-  right: (text, max = 1) => {
-    const pad = Math.floor(max)
-    let result = ''
-    for (const line of text.split('\n')) {
-      result = `${result}\n${line.padStart(max)}`
-    }
-    return result.slice(1)
-  },
-  center: (text, max = 1) => {
-    const pad = Math.floor(max)
-    let result = ''
-    for (const line of text.split('\n')) {
-      const diff = max - line.length
-      result = `${result}\n${' '.repeat(Math.floor(diff / 2))}${line}`
-    }
-    return result.slice(1)
-  },
-}
-
-const box = ({ text, align = 'center', size = getLonguestLine(text) + 2 }) =>
-  sqrBx(aligner[align](text, size - 2), size)
-
-
-init({ chars: ASCII+ '┌─┐│└┘' })
 </script>
+<script src="https://cdn.rawgit.com/adamschwartz/log/71f3f999/log.min.js"></script>
+<script>
+log('_Welcome in the console._')
+log('This is where you begin your journey.')
+log('You may `start()`')
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/codemirror.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/search/searchcursor.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/search/search.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/dialog/dialog.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/edit/matchbrackets.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/edit/closebrackets.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/comment/comment.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/wrap/hardwrap.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/fold/foldcode.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/fold/brace-fold.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/mode/javascript/javascript.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/keymap/sublime.js"></script>
 </body>
 </html>
