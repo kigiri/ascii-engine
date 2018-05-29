@@ -82,9 +82,7 @@ const getTexture = ({ fontFamily, chars, charCount, ...expected }) => {
 //  len++
 
   const fontSize = expected.width / ratio.width / charCount
-  const resolution = 2 ** Math.ceil(Math.log(fontSize * charCount) / Math.log(2))
-
-  console.log({ resolution, fontSize})
+  const resolution = 2 ** Math.ceil(Math.log(fontSize * len) / Math.log(2))
 
   const lines = Math.ceil((range * 4) / len)
 
@@ -97,7 +95,7 @@ const getTexture = ({ fontFamily, chars, charCount, ...expected }) => {
 
   const wPad = (width - ratio.width * fontSize) / 2
   const hPad = lines * ratio.height * fontSize
-  ctx.textBaseline =  'bottom'
+  ctx.textBaseline = 'top'
   const fonts = [
     `300 ${fontSize}px ${fontFamily}`,
     `900 ${fontSize}px ${fontFamily}`,
@@ -105,7 +103,6 @@ const getTexture = ({ fontFamily, chars, charCount, ...expected }) => {
     `italic 900 ${fontSize}px ${fontFamily}`,
   ]
 
-  console.log({ height, h: height * 0.75 })
   const glyphs = Object.create(null)
   Array(4).fill().map((_, i) => glyphs[i] = Object.create(null))
   chars.repeat(4).split('').forEach((l, i) => {
@@ -124,7 +121,7 @@ const getTexture = ({ fontFamily, chars, charCount, ...expected }) => {
       x * width + width, y * height + height,
     ].map(n => n / (resolution)))
 
-    ctx.fillText(l, wPad + x * width, (y * height) + height - fontSize * ratio.height)
+    ctx.fillText(l, wPad + x * width, (y * height))
   })
 
   return {
@@ -161,7 +158,8 @@ const init = ({
   letterSpacing = 0,
   lineHeight = 0,
 } = {}) => {
-  let font, fontSpaceWidth, fontSpaceHeight, fontHeight, fontWidth, px
+  let font, fontSpaceWidth, fontSpaceHeight, fontHeight, fontWidth, px,
+    fontLeftClip, fontTopClip
   const resize = () => {
     if (px === devicePixelRatio) return
     px = devicePixelRatio
@@ -174,14 +172,14 @@ const init = ({
     fontSpaceHeight = font.height + font.lineHeight + lineHeight
     fontHeight = font.height
     fontWidth = font.width
-    console.log({ fontSpaceWidth, fontSpaceHeight, fontHeight, fontWidth, font })
+    fontLeftClip = (fontWidth - fontSpaceWidth) / 2
+    fontTopClip = (fontHeight - fontSpaceHeight) / 2
   }
 
   resize()
-  addEventListener('resize', resize)
+  // addEventListener('resize', resize)
 
 
-  document.body.style.backgroundImage = `url(${font.canvas.toDataURL()})`
   // props :
   // verticalAlign ('top' | 'bottom')
   // align ('left' | 'right')
@@ -212,10 +210,8 @@ const init = ({
         continue
       }
 
-      const x = positionInLine * fontSpaceWidth -
-        (fontWidth - fontSpaceWidth) / 2
-      const y = lineBreaks * fontSpaceHeight -
-        (fontHeight - (fontSpaceHeight * 2))
+      const x = positionInLine * fontSpaceWidth - fontLeftClip
+      const y = lineBreaks * fontSpaceHeight - fontTopClip
 
       texCoords.set(glyph, offset)
       positions[offset] =
@@ -284,7 +280,7 @@ const init = ({
   let kolo = 0
   const render = () => {
     const [ t, p ] = makeVerticesForString(box({
-      text: 'Salut\nCa va ou quoi ???',
+      text: 'Salut\nCa va ou quoi ???\nWesh !!\nB1 ou ??!! je comprend pas',
       size: 80 }) +'\n'
     + box({
       text: 'Salut\nCa va ou quoi ???',
@@ -303,6 +299,7 @@ const init = ({
 
   render()
   window.gl = gl
+  document.body.style.backgroundImage = `url(${font.canvas.toDataURL()})`
 }
 
 // display.italic.bold.red('hey') // input colored text
@@ -334,7 +331,6 @@ const getLonguestLine = text => {
   for (const line of text.split('\n')) {
     max = Math.max(max, line.length)
   }
-  console.log({ max })
   return max
 }
 
@@ -363,7 +359,7 @@ const box = ({ text, align = 'center', size = getLonguestLine(text) + 2 }) =>
   sqrBx(aligner[align](text, size - 2), size)
 
 
-init({ chars: ASCII + '┌─┐│└┘' })
+init({ chars: ASCII+ '┌─┐│└┘' })
 </script>
 </body>
 </html>
