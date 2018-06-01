@@ -1,4 +1,6 @@
-export const responsive = ({ into, canvas }) => {
+export const dependencies = [ 'loop' ]
+import { debounce } from '../helper/ev.js'
+export const responsive = ({ loop, into, canvas }) => {
   const [ main, sub ] = canvas.width > canvas.height
     ? [ 'width', 'height' ]
     : [ 'height', 'width' ]
@@ -16,8 +18,7 @@ export const responsive = ({ into, canvas }) => {
     canvas.style[sub] = `${size * ratio}px`
   }
 
-  resize()
-  window.addEventListener('resize', resize)
+  window.addEventListener('resize', debounce(loop.after.requester(resize)))
 
   return {
     get realWidth() { return rect.width },
