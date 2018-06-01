@@ -1,3 +1,9 @@
+export const debounce = (fn, delay = 200) => {
+  let timeout
+  const cb = () => console.log({ delay }) || fn(timeout = undefined)
+  return () => timeout || (timeout = setTimeout(cb, delay))
+}
+
 export const ev = () => {
   const set = new Set
   const sub = fn => (set.add(fn), fn)
