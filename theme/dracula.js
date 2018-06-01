@@ -1,0 +1,11 @@
+export const background = 0x282a36
+export const foreground = 0xf8f8f2
+export const selection = 0x44475a
+export const comment = 0x6272a4
+export const orange = 0xffb86c
+export const purple = 0xbd93f9
+export const yellow = 0xf1fa8c
+export const green = 0x50fa7b
+export const cyan = 0x8be9fd
+export const pink = 0xff79c6
+export const red = 0xff5555
