@@ -14,8 +14,10 @@ export const responsive = ({ loop, into, canvas }) => {
     rect = r
     const size = Math.min(rect.height, rect.width)
 
-    canvas.style[main] = `${size}px`
-    canvas.style[sub] = `${size * ratio}px`
+    loop.before(() => {
+      canvas.style[main] = `${size}px`
+      canvas.style[sub] = `${size * ratio}px`
+    })
   }
 
   window.addEventListener('resize', debounce(loop.after.requester(resize)))
