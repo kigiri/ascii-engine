@@ -4,6 +4,38 @@ import { initWebGL } from './engine/webgl.js'
 const ASCII = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^'
   +'_`abcdefghijklmnopqrstuvwxyz{|}~'
 
+const loadAddonList = async (engine, list) =>
+  (await Promise.all(list.map(addon => importAddon(engine, addon))))
+    .reduce(loadAddon, engine)
+
+const importAddon = async (engine, name) => {
+  const addon = await import(`./addon/${name}.js`)
+  if (addon[name] === undefined) {
+    throw Error(`AddOn ${name} has no export ${name}`)
+  }
+  if (addon.dependencies && addon.dependencies.length) {
+    await loadAddonList(engine, addon.dependencies
+      .filter(name => !engine.addons.has(addon)))
+  }
+  return addon[name]
+}
+
+const loadAddon = (engine, addon) => {
+  if (engine.addons.has(addon)) return engine
+  const addonProps = addon(engine)
+  if (!addonProps) return engine
+  const entries = Object.entries(Object.getOwnPropertyDescriptors(addonProps))
+  for (const [ key, descriptor ] of entries) {
+    if (key in engine) {
+      console.warn(`Property ${key} overriden by addon ${addon.name}`)
+    }
+    Object.defineProperty(engine, key, descriptor)
+  }
+  engine.addons.add(addon)
+  return engine
+}
+
+
 const init = ({
   fontWeightBold = 900,
   fontFamily = 'monospace',
@@ -14,6 +46,7 @@ const init = ({
   height,
   width,
   into,
+  ...rest
 } = {}) => {
   if (!canvas && !height && !width) {
     canvas = document.getElementsByTagName('canvas')[0]
@@ -104,18 +137,24 @@ const init = ({
   }
 
   clear()
-  into && into.appendChild(canvas)
 
-  return {
+  into.appendChild(canvas)
+
+  const engine = {
+    ...rest,
+    into,
     cache,
-    render: requestRender,
     canvas,
     clear,
     text: putStr,
     char: putCharAt,
     color: setColor,
     mode: setMode,
+    addons: new WeakSet,
+    addon: list => loadAddonList(engine, list),
   }
+
+  return engine
 }
 
 export {
