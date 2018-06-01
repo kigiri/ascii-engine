@@ -3,8 +3,6 @@
 <head>
   <meta charset="utf-8">
   <title>layout</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/codemirror.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/theme/dracula.css">
 <style type="text/css">
 html, body {
   padding: 0;
@@ -31,6 +29,7 @@ body {
 #display {
   display: flex;
   justify-content: center;
+  align-items: center;
   width: 100%;
   height: 40%;
   flex-shrink: 0;
@@ -57,7 +56,6 @@ code.tip {
   #display {
     width: 50%;
     height: 100%;
-    flex-shrink: 0;
   }
 }
 
@@ -90,42 +88,72 @@ body.anyos .tip.anyos { display: initial }
 }
 import { init } from './engine.js'
 
-const displayEl = document.getElementById('display')
-const engine = init({
-  into: displayEl,
-  charCount: 40,
+init({
+  into: '#display',
+  charCount: 10,
   width: 710,
   height: 710,
+  reducers: {
+    count: {
+      _: 5,
+      add: (value, count) => count + value,
+      reset: () => 0,
+    },
+    message: {
+      _: 'hej',
+      set: message => message,
+    },
+    last: {
+      _: [],
+      push: (val, list) => [...list, val]
+    }
+  },
+}).addon([
+  'click',
+  'anime',
+  'responsive',
+  'state',
+]).then(engine => {
+  engine.color(1, 0.7, 0.7, 1)
+  engine.color.hex('#f1fa8c')
+  engine.color.hex('#50fa7b')
+
+  engine.store.subscribe(console.log)
+  engine.store.subscribe.count(console.log)
+  engine.store.connect({
+    count: _ => _,
+    last: _ => _,
+  })(console.log)
+  engine.store.actions.count.add(10)
+  engine.store.actions.count.reset()
+  engine.store.actions.count.add(12)
+  engine.store.actions.message.set('hoooo')
+
+  let i = 0
+  setInterval(() => {
+    engine.color.vals(1, Math.random(), 0.7, 1)
+    engine.text(`(>'-')>
+^('-')^
+<('-'<)
+<(^-^)>
+(>^o^)>
+^('o')^`.split('\n')[i++%6])
+    engine.render()
+  }, 200)
+  // engine.clear.line(2)
+  // engine.clear.area(2, 2, 3, 3) // x, y, w, h
+  // engine.char('o', 3, 0)
+
+  // setInterval(() => engine.char('H', 0, 1), 20)
+
+  console.log(engine)
+
 })
 
-const resize = () => {
-  const rect = displayEl.getBoundingClientRect()
-  engine.canvas.style.maxHeight = `${rect.height}px`
-  engine.canvas.style.maxWidth = `${rect.width}px`
-}
 
-resize()
-//engine.canvas.style.backgroundColor = '#90659a'
-
-
-engine.color(1, 0.7, 0.7, 1)
-engine.color.hex('#f1fa8c')
-engine.text(`
-Hejj
-wassup ??
-wassup???  d dsd d
-`)
-engine.color.hex('#50fa7b')
-engine.char('O', 0, 0)
-// engine.clear.line(2)
-// engine.clear.area(2, 2, 3, 3) // x, y, w, h
-engine.char('/', 0, 0)
-
-// setInterval(() => engine.char('H', 0, 1), 20)
-
-console.log(engine)
 
 window.start = () => {
+  document.getElementById('tutorial').remove()
   const editor = CodeMirror(document.body, {
     lineNumbers: true,
     matchBrackets: true,
@@ -134,7 +162,7 @@ window.start = () => {
     mode: 'javascript',
     viewportMargin: Infinity,
     keyMap: 'sublime',
-    tabSize: 2
+    tabSize: 2,
   })
 }
 </script>
@@ -145,6 +173,9 @@ log('This is where you begin your journey.')
 log('You may `start()`')
 
 </script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/codemirror.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/theme/dracula.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/codemirror.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/search/searchcursor.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/search/search.js"></script>
