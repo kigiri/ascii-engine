@@ -1,6 +1,6 @@
 export const debounce = (fn, delay = 200) => {
   let timeout
-  const cb = () => console.log({ delay }) || fn(timeout = undefined)
+  const cb = () => fn(timeout = undefined)
   return () => timeout || (timeout = setTimeout(cb, delay))
 }
 
