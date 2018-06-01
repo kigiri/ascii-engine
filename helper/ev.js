@@ -1,15 +1,18 @@
 export const ev = () => {
   const set = new Set
   const sub = fn => (set.add(fn), fn)
-  const oncer = fn => () => (fn(), set.remove(fn))
+  const oncer = fn => {
+    const ff = () => (fn(), set.delete(ff))
+    return ff
+  }
   sub.once = fn => sub(oncer(fn))
   sub.requester = (fn, notImmediate) => {
-    const oncer = oncer(fn)
-    notImmediate || sub(oncer)
-    return () => sub(oncer)
+    fn = oncer(fn)
+    notImmediate || sub(fn)
+    return () => sub(fn)
   }
   sub.in = (fn, delay = 0) => setTimeout(sub.once, delay, fn)
-  sub.remove = fn => (set.remove(fn), fn)
+  sub.delete = fn => (set.delete(fn), fn)
   function exec() {
     for (const f of set) {
       f.apply(this, arguments)
