@@ -95,7 +95,7 @@ export const initWebGL = (canvas, font) => {
 
   return {
     colorize: (r, g, b) => gl.uniform4f(u_color, r, g, b, 1),
-    draw: ({ glyph, position }) => {
+    draw: (glyph, position) => {
       if (!glyph) return
       gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
       gl.bufferData(gl.ARRAY_BUFFER, glyph, gl.STATIC_DRAW)

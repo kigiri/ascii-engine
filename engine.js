@@ -66,55 +66,76 @@ const init = ({
   }
 
   typeof into === 'string' && (into = document.querySelector(into))
+  }
 
-  const cache = makeCache({ charCount, lineCount, fontFamily, chars, height, width })
+  const cache = makeCache({
+    charCount,
+    lineCount,
+    fontFamily,
+    chars,
+    height,
+    width
+  })
+  const { row, max, positions, background, foreground, ui } = cache
   const { colorize, draw, clear } = initWebGL(canvas, cache.canvas)
 
   let color
-  const setColor = (r, g, b) => {
+  const setColor = n => {
+    if (typeof n !== 'number') return
+    color = n
+    colorize((n >> 16 & 0xFF) / 0xFF, (n >> 8 & 0xFF) / 0xFF, (n & 0xFF) / 0xFF)
+  }
+
+  setColor.vals = (r, g, b) => {
     color = (r * 0xFF << 16) + (g * 0xFF << 8) + b * 0xFF
     colorize(r, g, b)
   }
 
   setColor.rgb = (r, g, b) => setColor(r / 0xFF, g / 0xFF, b / 0xFF)
-  setColor.int = n => setColor.rgb(n >> 16 & 0xFF, n >> 8 & 0xFF, n & 0xFF)
-  setColor.hex = hex => setColor.int(parseInt(hex.replace('#', ''), 16))
+  setColor.hex = hex => setColor(parseInt(hex.replace('#', ''), 16))
 
-  let glyphs = cache.glyphs[0]
-  const setMode = (mode = 0) => glyphs = cache.glyphs[mode]
+  let mode = 0
+  let level = 1
+  let glyphs = cache.glyphs[mode]
+  let charCache = foreground
+  const levels = [ background, foreground, ui ]
+  const setMode = m => glyphs = cache.glyphs[mode = m]
+  const setLevel = l => charCache = levels[l]
   setMode.normal = () => setMode(0)
   setMode.bold = () => setMode(1)
   setMode.italic = () => setMode(2)
   setMode.boldItalic = () => setMode(3)
+  setLevel.background = () => charCache = background
+  setLevel.foreground = () => charCache = foreground
+  setLevel.ui = () => charCache = ui
 
   const putCharAt = (letter, x, y) => {
-    const c = cache[y*cache.row+x]
+    const c = charCache[y*row+x]
     if (!c) return
+
     const glyph = glyphs[letter]
     if (c.glyph === glyph && c.color === color) return
 
     c.glyph = glyph
     c.color = color
-
-    draw(c)
+    return c
   }
 
-  let rendering
+  const drawChar = (c, position) => {
+    if (!c.glyph) return
+    c.color === color || setColor(c.color)
+    draw(c.glyph, position)
+  }
+
   const render = () => {
     clear()
-    let i = -1, c
-    while (++i < cache.max) {
-      c = cache[i]
-      if (c.color !== color) {
-        setColor.int(c.color)
-      }
-      draw(c)
-    }
-    rendering = false
+    let i = -1
+    while (++i < max) { drawChar(background[i], positions[i]) }
+    i = -1
+    while (++i < max) { drawChar(foreground[i], positions[i]) }
+    i = -1
+    while (++i < max) { drawChar(ui[i], positions[i]) }
   }
-
-  const requestRender = () =>
-    rendering || (rendering = requestAnimationFrame(render))
 
   const putStr = (str, x = 0, y = 0) => {
     let i = -1, letter
@@ -123,16 +144,15 @@ const init = ({
       if (letter === '\n') {
         x = 0
         y++
-        continue
-      }
+      } else {
+        if (x > charCount) {
+          y++
+          x = 0
+        }
 
-      if (x > charCount) {
-        y++
-        x = 0
+        putCharAt(letter, x, y)
+        x++
       }
-
-      putCharAt(letter, x, y)
-      x++
     }
   }
 
@@ -145,11 +165,13 @@ const init = ({
     into,
     cache,
     canvas,
-    clear,
+    charCount,
+    lineCount,
     text: putStr,
     char: putCharAt,
-    color: setColor,
     mode: setMode,
+    level: setLevel,
+    color: setColor,
     addons: new WeakSet,
     addon: list => loadAddonList(engine, list),
   }
