@@ -62,10 +62,17 @@ const init = ({
   }
 
   if (!canvas.height || !canvas.width) {
-    throw Error(`wrong canvas size w:${canvas.width} h:${canvas.height}`)
+    throw Error(`Wrong canvas size w:${canvas.width} h:${canvas.height}`)
   }
 
-  typeof into === 'string' && (into = document.querySelector(into))
+  if (typeof into === 'string') {
+    const el = document.querySelector(into)
+    if (el == null) throw Error(`Query ${into} didn't find any element`)
+    into = el
+  }
+
+  if (!(into instanceof Node)) {
+    throw Error('Option `into` must be a Node or a valid css query')
   }
 
   const cache = makeCache({
