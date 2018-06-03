@@ -1,12 +1,11 @@
 import { generateAtlas } from './font-atlas-generator.js'
 
-const makeChar = (x, y, i) => {
+const makeChar = () => {
   const c = Object.create(null)
-  c.x = x
-  c.y = y
-  c.i = i
   c.color = undefined
   c.glyph = undefined
+  c.letter = undefined
+  c.mode = undefined
   return c
 }
 
@@ -16,7 +15,7 @@ export const makeCache = engine => {
   const fontSpaceWidth = font.width + font.letterSpacing
   const fontSpaceHeight = font.height + font.lineHeight
   const fontLeftClip = -font.letterSpacing / 2
-  const col = engine.lineCount || Math.ceil(height / font.height)
+  const col = Math.ceil(height / fontSpaceHeight)
 
   return [ ...Array(row * col).keys() ]
     .map(i => [
@@ -24,9 +23,9 @@ export const makeCache = engine => {
       Math.floor(i / row) * fontSpaceHeight,
     ])
     .reduce((c, [x, y], i) => {
-      c.background[i] = makeChar(x, y, i)
-      c.foreground[i] = makeChar(x, y, i)
-      c.ui[i] = makeChar(x, y, i)
+      c.background[i] = makeChar()
+      c.foreground[i] = makeChar()
+      c.ui[i] = makeChar()
       c.positions[i] = new Float32Array([
         x, y,
         x + font.width, y,
@@ -35,6 +34,15 @@ export const makeCache = engine => {
         x + font.width, y,
         x + font.width, y + font.height
       ])
+      c[i] = {
+        x,
+        y,
+        i,
+        background: c.background[i],
+        foreground: c.foreground[i],
+        ui: c.ui[i],
+        positions: c.positions[i],
+      }
       return c
     }, {
       max: row * col,
