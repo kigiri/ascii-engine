@@ -5,10 +5,7 @@ export const responsive = ({ loop, into, canvas, cache: { row, col } }) => {
     ? [ [ 'width', row ], [ 'height', col ] ]
     : [ [ 'height', col ], [ 'width', row ] ]
 
-  console.log({ row, col, main, sub, mainCount, subCount })
-
   const ratio = canvas[sub] / canvas[main]
-
   const size = Object.create(null)
   const px = size.px = Object.create(null)
   size.width = null
