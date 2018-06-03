@@ -7,7 +7,6 @@ const calculateOptimalLength = (len, fontWidth, max) =>
 
 export const generateAtlas = ({ fontFamily, chars, charCount, ...expected }) => {
   const range = chars.length
-  const sqrt = Math.sqrt(range)
   const ratio = getFontRatio(fontFamily)
   const fontWidth = ratio.width * 1.5
   const len = calculateOptimalLength(1, fontWidth, range * 4 * ratio.height)
@@ -31,8 +30,7 @@ export const generateAtlas = ({ fontFamily, chars, charCount, ...expected }) => 
   ctx.textBaseline = 'top'
   ctx.fillStyle = 'white'
 
-  const glyphs = Object.create(null)
-  Array(4).fill().map((_, i) => glyphs[i] = Object.create(null))
+  const glyphs = Array(4).fill().map(() => Object.create(null))
 
   chars.repeat(4).split('').forEach((l, i) => {
     const typeIndex = Math.floor(i / range)
@@ -40,17 +38,21 @@ export const generateAtlas = ({ fontFamily, chars, charCount, ...expected }) => 
 
     const x = i % len
     const y = Math.floor(i / len)
+    const x1 = (x * width) / resolution
+    const x2 = (x * width + width) / resolution
+    const y1 = (y * height) / resolution
+    const y2 = (y * height + height) / resolution
 
     glyphs[typeIndex][l] = new Float32Array([
-      x * width,         y * height,
-      x * width + width, y * height,
-      x * width,         y * height + height,
-      x * width,         y * height + height,
-      x * width + width, y * height,
-      x * width + width, y * height + height,
-    ].map(n => n / (resolution)))
+      x1, y1,
+      x2, y1,
+      x1, y2,
+      x1, y2,
+      x2, y1,
+      x2, y2
+    ])
 
-    ctx.fillText(l, wPad + x * width, (y * height))
+    ctx.fillText(l, wPad + x * width, y * height)
   })
 
   return {
