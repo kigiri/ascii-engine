@@ -50,10 +50,8 @@ const initProgram = gl => {
 }
 
 export const initWebGL = (canvas, font) => {
-  const gl = canvas.getContext('webgl2', {
-    premultipliedAlpha: false,
-    preserveDrawingBuffer: true,
-  })
+  const premultipliedAlpha = true
+  const gl = canvas.getContext('webgl2', { premultipliedAlpha })
 
   const program = initProgram(gl)
   const a_position = gl.getAttribLocation(program, 'a_position')
@@ -77,6 +75,10 @@ export const initWebGL = (canvas, font) => {
   gl.enableVertexAttribArray(texCoordAttributeLocation)
   gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0)
 
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, !premultipliedAlpha)
+  gl.enable(gl.BLEND)
+  gl.blendFunc(premultipliedAlpha ? gl.SRC_ALPHA : gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+
   gl.activeTexture(gl.TEXTURE0 + 0)
   gl.bindTexture(gl.TEXTURE_2D, texture)
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
@@ -85,8 +87,6 @@ export const initWebGL = (canvas, font) => {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, font)
   gl.viewport(0, 0, canvas.width, canvas.height)
-  gl.enable(gl.BLEND)
-  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 
   gl.useProgram(program)
   gl.bindVertexArray(vao)
