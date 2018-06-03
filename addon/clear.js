@@ -4,12 +4,14 @@ export const clear = ({ cache }) => {
   const clearCharLevel = c => {
     c.color = undefined
     c.glyph = undefined
+    c.letter = undefined
+    c.mode = undefined
   }
 
   const clearChar = c => {
-    clearCharLevel(c[0])
-    clearCharLevel(c[1])
-    clearCharLevel(c[2])
+    clearCharLevel(c.background)
+    clearCharLevel(c.foreground)
+    clearCharLevel(c.ui)
   }
 
   const clearCache = () => {
@@ -25,8 +27,6 @@ export const clear = ({ cache }) => {
     clearChar(c)
   }
 
-  clearCache.char.
-
   clearCache.line = y => {
     const r = y*row
     const end = r+row
@@ -40,7 +40,7 @@ export const clear = ({ cache }) => {
   clearCache.line.vertical = x => {
     if (x > row) return
     let i = 0
-    while ((i < end) {
+    while (i < end) {
       clearChar(cache[i])
       i += row
     }
