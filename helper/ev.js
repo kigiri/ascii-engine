@@ -1,7 +1,22 @@
 export const debounce = (fn, delay = 200) => {
-  let timeout
-  const cb = () => fn(timeout = undefined)
-  return () => timeout || (timeout = setTimeout(cb, delay))
+  let lastcall = 0, timeout
+  const cb = () => {
+    timeout = undefined
+    lastcall = Date.now()
+    fn()
+  }
+
+  return () => {
+    if (timeout) return
+    const now = Date.now()
+    const diff = now - lastcall
+    if (diff > delay) {
+      lastcall = now
+      return fn()
+    }
+
+    timeout = setTimeout(cb, diff)
+  }
 }
 
 export const ev = () => {
@@ -25,4 +40,41 @@ export const ev = () => {
     }
   }
   return { sub, exec }
+}
+
+export const map = (event, fn) => {
+  const mapped = ev()
+  event(value => mapped.exec(fn(value)))
+  return mapped.sub
+}
+
+export const merge = events => {
+  const merged = ev()
+  for (const e of events) {
+    e(merged.exec)
+  }
+  return merged.sub
+}
+
+export const watch = obj => {
+  const trigger = ev()
+  const any = ev()
+  any.sub.on = {}
+
+  for (const key of Object.keys(obj)) {
+    const e = ev()
+    any.sub.on[key] = e.sub
+    let prev = obj[key]
+    trigger.sub(() => {
+      const next = obj[key]
+      if (prev === next) return
+      e.exec(next, prev)
+      any.exec(obj, key)
+      prev = next
+    })
+  }
+
+  any.check = trigger.exec
+
+  return any
 }
