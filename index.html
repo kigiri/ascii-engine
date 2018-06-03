@@ -90,7 +90,7 @@ import { init } from './engine.js'
 
 init({
   into: '#display',
-  charCount: 10,
+  charCount: 40,
   width: 710,
   height: 710,
   reducers: {
@@ -109,14 +109,17 @@ init({
     }
   },
 }).addon([
-  'click',
   'anime',
+  'clear',
+  'text',
+  'select',
   'responsive',
   'state',
+  'event',
 ]).then(engine => {
-  engine.color(1, 0.7, 0.7, 1)
-  engine.color.hex('#f1fa8c')
-  engine.color.hex('#50fa7b')
+  // engine.color(1, 0.7, 0.7, 1)
+  // engine.color.hex('#f1fa8c')
+  // engine.color.hex('#50fa7b')
 
   engine.store.subscribe(console.log)
   engine.store.subscribe.count(console.log)
@@ -129,15 +132,32 @@ init({
   engine.store.actions.count.add(12)
   engine.store.actions.message.set('hoooo')
 
+  engine.each(char => engine.char.set.color(char.background, 'X', 0x6272a4))
+  engine.each(char => engine.char.set.color(char.foreground, 'O', 0x282a36))
+
+  let current = 0
+  let start
+  engine.event.mouse.on.i(i => current = i)
+  engine.event.mouse.on.l(clicked => start = clicked ? current : undefined)
+
+  engine.loop.before(() => {
+    engine.each(char => engine.char.set.color(char.foreground, 'O', 0x282a36))
+    if (start === undefined) return
+    console.log({ start, current })
+    engine.select.area(start, current).forEach(char => {
+      char && engine.char.set.color(char.foreground, '@', 0xff79c6)
+    })
+  })
+
   let i = 0
   setInterval(() => {
-    engine.color.vals(1, Math.random(), 0.7, 1)
-    engine.text(`(>'-')>
-^('-')^
-<('-'<)
-<(^-^)>
-(>^o^)>
-^('o')^`.split('\n')[i++%6])
+    // engine.color.vals(1, Math.random(), 0.7, 1)
+//     engine.text(`(>'-')>
+// ^('-')^
+// <('-'<)
+// <(^-^)>
+// (>^o^)>
+// ^('o')^`.split('\n')[i++%6])
     engine.render()
   }, 200)
   // engine.clear.line(2)
