@@ -50,7 +50,7 @@ const modifiers = [ 'ctrl', 'shift', 'meta', 'alt' ]
 
 export const dependencies = [ 'loop', 'responsive' ]
 export const event = ({ loop, cache, canvas, size }) => {
-  const { max } = cache
+  const { max, row, col } = cache
   const keys = Object.create(null)
   const mouse = Object.create(null)
   mouse.hover = undefined
@@ -66,29 +66,39 @@ export const event = ({ loop, cache, canvas, size }) => {
   mouseKeys[2] = 'm'
   mouseKeys[3] = 'r'
 
-  canvas.addEventListener('mouseup', e => mouse[mouseKeys[e.which]] = false)
-  canvas.addEventListener('mousedown', e => {
-    e.preventDefault()
-    mouse[mouseKeys[e.which]] = true
-  })
-
-  canvas.addEventListener('mousemove', e => {
-    mouse.x = Math.max(0, Math.floor((e.pageX - size.rect.x) / size.width)) || 0
-    mouse.y = Math.max(0, Math.floor((e.pageY - size.rect.y) / size.height)) || 0
-    mouse.i = Math.min(max - 1, Math.max(0, mouse.y * cache.row + mouse.x))
+  const handleMousePosition = e => {
+    mouse.x = clampX(Math.floor((e.pageX - size.rect.x) / size.width) || 0)
+    mouse.y = clampY(Math.floor((e.pageY - size.rect.y) / size.height) || 0)
+    mouse.i = clampIndex(mouse.y * cache.row + mouse.x)
     mouse.hover = cache[mouse.i]
     if (!e.which) {
       mouse.l = false
       mouse.m = false
       mouse.r = false
     }
+  }
+
+  window.addEventListener('mouseup', e => {
+    mouse[mouseKeys[e.which]] = false
+    handleMousePosition(e)
+  }, false)
+
+  window.addEventListener('mousedown', e => {
+    e.preventDefault()
+    mouse[mouseKeys[e.which]] = true
+    handleMousePosition(e)
   })
 
-  canvas.addEventListener('mouseleave', e => mouse.hover = undefined)
+  const clamp = (low, high) => value => Math.max(low, Math.min(high, value))
+  const clampIndex = clamp(0, max)
+  const clampX = clamp(0, row - 1)
+  const clampY = clamp(0, col - 1)
+
+  window.addEventListener('mousemove', handleMousePosition, false)
+  canvas.addEventListener('mouseleave', e => mouse.hover = undefined, false)
 
   const mouseEvent = watch(mouse)
   loop.before(mouseEvent.check)
-
 
   const keyHandlers = Array(3).fill()
     .reduce(a => [ a, JSON.parse(JSON.stringify(a)) ], [{},{}])
