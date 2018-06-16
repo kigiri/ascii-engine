@@ -76,7 +76,7 @@ const init = ({
 
   const cache = makeCache({ charCount, fontFamily, chars, height, width })
   const { row, max, positions, background, foreground, ui } = cache
-  const { colorize, draw, clear } = initWebGL(canvas, cache.canvas)
+  const { colorize, draw, clear } = initWebGL(canvas, cache.canvas, max)
 
   let color = 0
   const setColor = n => {
@@ -92,12 +92,7 @@ const init = ({
 
   const render = () => {
     clear()
-    let i = -1
-    while (++i < max) { drawChar(background[i], positions[i]) }
-    i = -1
-    while (++i < max) { drawChar(foreground[i], positions[i]) }
-    i = -1
-    while (++i < max) { drawChar(ui[i], positions[i]) }
+    draw(foreground, positions, max)
   }
 
   const each = fn => {
