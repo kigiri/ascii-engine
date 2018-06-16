@@ -34,6 +34,7 @@ body {
   height: 40%;
   flex-shrink: 0;
   background-color: hsla(231, 15%, 15%, 1);
+  cursor: pointer;
 }
 
 .CodeMirror {
@@ -87,12 +88,14 @@ body.anyos .tip.anyos { display: initial }
   document.body.classList.add('anyos')
 }
 import { init } from './engine.js'
+import { cdn } from './tupac.js'
 
 init({
   into: '#display',
-  charCount: 40,
-  width: 710,
-  height: 710,
+  charCount: 80,
+  width: Math.max(innerHeight * devicePixelRatio, innerWidth / 2 * devicePixelRatio),
+  height: Math.max(innerHeight * devicePixelRatio, innerWidth / 2 * devicePixelRatio),
+  // height: innerHeight * devicePixelRatio,
   reducers: {
     count: {
       _: 5,
@@ -116,7 +119,7 @@ init({
   'responsive',
   'state',
   'event',
-]).then(engine => {
+]).then(async engine => {
   // engine.color(1, 0.7, 0.7, 1)
   // engine.color.hex('#f1fa8c')
   // engine.color.hex('#50fa7b')
@@ -132,34 +135,71 @@ init({
   engine.store.actions.count.add(12)
   engine.store.actions.message.set('hoooo')
 
-  engine.each(char => engine.char.set.color(char.background, 'X', 0x6272a4))
-  engine.each(char => engine.char.set.color(char.foreground, 'O', 0x282a36))
+  // engine.each(char => engine.char.set.color(char.background, 'X', 0x6272a4))
+  // engine.each(char => engine.char.set.color(char.foreground, 'O', 0x282a36))
 
   let current = 0
   let start
   engine.event.mouse.on.i(i => current = i)
   engine.event.mouse.on.l(clicked => start = clicked ? current : undefined)
 
+
+  // engine.event.key.ctrl.L(console.log)
+  // === // engine.event.key.shift.ctrl.l(console.log)
+  // engine.event.key.meta.g(console.log)
+
+  // engine.event.mouse(console.log)
   engine.loop.before(() => {
-    engine.each(char => engine.char.set.color(char.foreground, 'O', 0x282a36))
+    engine.clear()
+    engine.each(char => engine.char.set.color(char.foreground, 'X', 0x282a36))
     if (start === undefined) return
-    console.log({ start, current })
+    // console.log({ start, current })
     engine.select.area(start, current).forEach(char => {
-      char && engine.char.set.color(char.foreground, '@', 0xff79c6)
+      engine.char.set.color(char.foreground, 'O', 0xff79c6)
     })
   })
 
-  let i = 0
-  setInterval(() => {
-    // engine.color.vals(1, Math.random(), 0.7, 1)
-//     engine.text(`(>'-')>
-// ^('-')^
-// <('-'<)
-// <(^-^)>
-// (>^o^)>
-// ^('o')^`.split('\n')[i++%6])
-    engine.render()
-  }, 200)
+  const styles = cdn.all([
+    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/codemirror.css',
+    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/theme/dracula.css',
+  ])
+
+  const [ CodeMirror ] = await cdn.all([
+    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/codemirror.js',
+    'https://cdn.rawgit.com/adamschwartz/log/71f3f999/log.min.js',
+  ])
+
+  log('_Welcome in the console._')
+  log('This is where you begin your journey.')
+
+  await cdn.all([
+    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/search/searchcursor.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/search/search.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/dialog/dialog.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/edit/matchbrackets.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/edit/closebrackets.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/comment/comment.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/wrap/hardwrap.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/fold/foldcode.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/fold/brace-fold.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/mode/javascript/javascript.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/keymap/sublime.js',
+  ])
+
+  log('You may `start()`')
+
+  return styles
+//   let i = 0
+//   setInterval(() => {
+//     // engine.color.vals(1, Math.random(), 0.7, 1)
+// //     engine.text(`(>'-')>
+// // ^('-')^
+// // <('-'<)
+// // <(^-^)>
+// // (>^o^)>
+// // ^('o')^`.split('\n')[i++%6])
+//     engine.render()
+//   }, 200)
   // engine.clear.line(2)
   // engine.clear.area(2, 2, 3, 3) // x, y, w, h
   // engine.char('o', 3, 0)
@@ -169,8 +209,6 @@ init({
   console.log(engine)
 
 })
-
-
 
 window.start = () => {
   document.getElementById('tutorial').remove()
@@ -186,27 +224,5 @@ window.start = () => {
   })
 }
 </script>
-<script src="https://cdn.rawgit.com/adamschwartz/log/71f3f999/log.min.js"></script>
-<script>
-log('_Welcome in the console._')
-log('This is where you begin your journey.')
-log('You may `start()`')
-
-</script>
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/codemirror.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/theme/dracula.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/codemirror.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/search/searchcursor.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/search/search.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/dialog/dialog.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/edit/matchbrackets.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/edit/closebrackets.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/comment/comment.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/wrap/hardwrap.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/fold/foldcode.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/addon/fold/brace-fold.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/mode/javascript/javascript.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.38.0/keymap/sublime.js"></script>
 </body>
 </html>
