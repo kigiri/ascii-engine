@@ -3,6 +3,11 @@ export const select = ({ cache }) => {
   const last = max - 1
 
   const range = (start, end) => {
+    if (start > end) {
+      let tmp = end
+      end = start
+      start = tmp
+    }
     start = Math.max(0, start)
     end = Math.min(end, last)
     const size = end - start + 1
